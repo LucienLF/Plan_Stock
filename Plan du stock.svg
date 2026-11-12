@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm" viewBox="0 0 1122.5197 793.70081">
+  <title>Plan du stock</title>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g id="Zones_au_sol" font-family="Arial" fill="#6b7280" text-anchor="middle" dominant-baseline="central">
+    <g id="Allée 1"><rect x="114.0" y="167.0" width="346.0" height="234.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="287.00" y="284.00" font-size="24">Allée 1</text></g>
+    <g id="Allée 2"><rect x="538.0" y="102.0" width="130.0" height="299.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="603.00" y="251.50" font-size="22">Allée 2</text></g>
+    <g id="Allée 3"><rect x="746.0" y="102.0" width="99.0" height="299.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="795.50" y="251.50" font-size="20">Allée 3</text></g>
+    <g id="Allée 4"><rect x="924.0" y="102.0" width="82.0" height="299.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="965.00" y="251.50" font-size="17">Allée 4</text></g>
+    <g id="Allée centrale"><rect x="48.0" y="413.0" width="1023.0" height="221.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="559.50" y="523.50" font-size="26">Allée centrale</text></g>
+    <g id="Entrée"><rect x="1008.0" y="647.0" width="63.0" height="53.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="1039.50" y="673.50" font-size="15">Entrée</text></g>
+    <g id="Entre F et G"><rect x="388.0" y="647.0" width="38.0" height="53.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="407.00" y="673.50" font-size="14">F-G</text></g>
+    <g id="Entre G et H"><rect x="238.0" y="647.0" width="43.0" height="53.0" rx="6" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 7"/><text x="259.50" y="673.50" font-size="14">G-H</text></g>
+  </g>
+  <path id="Contour_plan" d="m 1118.33,439.32 -41.17,168.62 v 98.83 H 41.57 V 94.49 H 1077.17 V 438.46" fill="none" stroke="#000000" stroke-width="4.11" stroke-linejoin="round"/>
+  <g id="Etageres" font-family="Arial" font-size="24" text-anchor="middle" dominant-baseline="central">
+    <g id="A"><rect x="907.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="954.50" y="673.51">A</text></g>
+    <g id="B"><rect x="812.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="859.50" y="673.51">B</text></g>
+    <g id="C"><rect x="717.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="764.50" y="673.51">C</text></g>
+    <g id="D"><rect x="622.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="669.50" y="673.51">D</text></g>
+    <g id="E"><rect x="527.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="574.50" y="673.51">E</text></g>
+    <g id="F"><rect x="432.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="479.50" y="673.51">F</text></g>
+    <g id="G"><rect x="287.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="334.50" y="673.51">G</text></g>
+    <g id="H"><rect x="137.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="184.50" y="673.51">H</text></g>
+    <g id="I"><rect x="42.0" y="640.85" width="95.0" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="89.50" y="673.51">I</text></g>
+    <g id="J"><rect x="42.93" y="303.72" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="75.59" y="355.28">J</text></g>
+    <g id="K"><rect x="42.93" y="199.78" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="75.59" y="251.34">K</text></g>
+    <g id="L"><rect x="42.93" y="95.85" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="75.59" y="147.41">L</text></g>
+    <g id="M"><rect x="258.37" y="95.85" width="103.11" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="309.93" y="128.51">M</text></g>
+    <g id="N"><rect x="362.3" y="95.85" width="103.11" height="65.32" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="413.86" y="128.51">N</text></g>
+    <g id="O"><rect x="466.24" y="303.72" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="498.90" y="355.28">O</text></g>
+    <g id="P"><rect x="466.24" y="199.78" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="498.90" y="251.34">P</text></g>
+    <g id="Q"><rect x="466.24" y="95.85" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="498.90" y="147.41">Q</text></g>
+    <g id="R"><rect x="674.11" y="303.72" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="706.77" y="355.28">R</text></g>
+    <g id="S"><rect x="674.11" y="199.78" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="706.77" y="251.34">S</text></g>
+    <g id="T"><rect x="674.11" y="95.85" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="706.77" y="147.41">T</text></g>
+    <g id="U"><rect x="851.75" y="303.72" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="884.41" y="355.28">U</text></g>
+    <g id="V"><rect x="851.75" y="199.78" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="884.41" y="251.34">V</text></g>
+    <g id="W"><rect x="851.75" y="95.85" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="884.41" y="147.41">W</text></g>
+    <g id="X"><rect x="1012.38" y="303.72" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="1045.04" y="355.28">X</text></g>
+    <g id="Y"><rect x="1012.38" y="199.78" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="1045.04" y="251.34">Y</text></g>
+    <g id="Z"><rect x="1012.38" y="95.85" width="65.32" height="103.11" fill="#ffffff" stroke="#000000" stroke-width="2.72" stroke-linejoin="round"/><text x="1045.04" y="147.41">Z</text></g>
+  </g>
+</svg>
