@@ -190,21 +190,13 @@ function demarrer() {
   grist.onRecords(() => {}); // garde le widget à jour quand les données changent
 }
 
-// Charge l'API depuis ton serveur Grist, sinon depuis getgrist.com
+// Charge l'API Grist (aucun accès au réseau local depuis cette page)
 (function chargerApi() {
-  const sources = [
-    "http://192.168.100.10:8484/grist-plugin-api.js",
-    "https://docs.getgrist.com/grist-plugin-api.js",
-  ];
-  let i = 0;
-  (function suivant() {
-    if (i >= sources.length) { demarrer(); return; }
-    const s = document.createElement("script");
-    s.src = sources[i++];
-    s.onload = demarrer;
-    s.onerror = suivant;
-    document.head.appendChild(s);
-  })();
+  const s = document.createElement("script");
+  s.src = "https://docs.getgrist.com/grist-plugin-api.js";
+  s.onload = demarrer;
+  s.onerror = demarrer;
+  document.head.appendChild(s);
 })();
 </script>
 </body>
