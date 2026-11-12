@@ -48,15 +48,25 @@
   .shelf.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 6; }
   .shelf.on text { font-weight: 700; fill: var(--hl); }
   .shelf text.sous { font-size: 17px; font-weight: 700; }
-  .shelf.on .pulse { fill: none; stroke: var(--hl); stroke-width: 4;
+  .zone rect { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 10 7;
+    transition: fill .2s, stroke .2s; }
+  .zone text { fill: var(--muted); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .zone.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 4; stroke-dasharray: none; }
+  .zone.on text { fill: var(--hl); font-weight: 700; }
+  .shelf.on .pulse, .zone.on .pulse { fill: none; stroke: var(--hl); stroke-width: 4; stroke-dasharray: none;
     animation: pulse 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
   .pulse { display: none; }
-  .shelf.on .pulse { display: block; }
+  .shelf.on .pulse, .zone.on .pulse { display: block; }
+  .zone.on .pulse { animation-name: pulse-zone; }
   @keyframes pulse {
     0%   { opacity: .9; transform: scale(1); }
-    100% { opacity: 0;  transform: scale(1.25); }
+    100% { opacity: 0;  transform: scale(1.12); }
   }
-  @media (prefers-reduced-motion: reduce) { .shelf.on .pulse { animation: none; opacity: .5; } }
+  @keyframes pulse-zone {
+    0%   { opacity: .9; transform: scale(1); }
+    100% { opacity: 0;  transform: scale(1.03); }
+  }
+  @media (prefers-reduced-motion: reduce) { .shelf.on .pulse, .zone.on .pulse { animation: none; opacity: .5; } }
 </style>
 </head>
 <body>
@@ -71,11 +81,12 @@
 <script>
 // Étagères du plan (coordonnées reprises de « Plan du stock.svg »)
 const ETAGERES = [
-  ["A", 972.70, 640.85, 103.11, 65.32], ["B", 868.76, 640.85, 103.11, 65.32],
-  ["C", 764.82, 640.85, 103.11, 65.32], ["D", 660.89, 640.85, 103.11, 65.32],
-  ["E", 556.95, 640.85, 103.11, 65.32], ["F", 453.01, 640.85, 103.11, 65.32],
-  ["G", 303.72, 640.85, 103.11, 65.32], ["H", 144.98, 640.85, 103.11, 65.32],
-  ["I",  41.04, 640.85, 103.11, 65.32],
+  // Rangée du bas : espaces laissés entre H et G, entre G et F, et entre A et le mur d'entrée
+  ["A", 907, 640.85, 95, 65.32], ["B", 812, 640.85, 95, 65.32],
+  ["C", 717, 640.85, 95, 65.32], ["D", 622, 640.85, 95, 65.32],
+  ["E", 527, 640.85, 95, 65.32], ["F", 432, 640.85, 95, 65.32],
+  ["G", 287, 640.85, 95, 65.32], ["H", 137, 640.85, 95, 65.32],
+  ["I",  42, 640.85, 95, 65.32],
   ["J",  42.93, 303.72, 65.32, 103.11], ["K",  42.93, 199.78, 65.32, 103.11],
   ["L",  42.93,  95.85, 65.32, 103.11],
   ["M", 258.37,  95.85, 103.11, 65.32], ["N", 362.30,  95.85, 103.11, 65.32],
@@ -88,6 +99,18 @@ const ETAGERES = [
   ["X", 1012.38, 303.72, 65.32, 103.11], ["Y", 1012.38, 199.78, 65.32, 103.11],
   ["Z", 1012.38,  95.85, 65.32, 103.11],
 ];
+// Zones au sol (matériel trop grand pour les étagères) : [code dans Grist, libellé sur le plan, x, y, largeur, hauteur, taille du texte]
+const ZONES = [
+  ["Allée 1",        "Allée 1",        114, 167, 346, 234, 24],
+  ["Allée 2",        "Allée 2",        538, 102, 130, 299, 22],
+  ["Allée 3",        "Allée 3",        746, 102,  99, 299, 20],
+  ["Allée 4",        "Allée 4",        924, 102,  82, 299, 17],
+  ["Allée centrale", "Allée centrale",  48, 413, 1023, 221, 26],
+  ["Entrée",         "Entrée",        1008, 647,  63,  53, 15],
+  ["Entre F et G",   "F-G",            388, 647,  38,  53, 14],
+  ["Entre G et H",   "G-H",            238, 647,  43,  53, 14],
+];
+// Mur avec la porte d'entrée à droite (ouverture + battant)
 const CONTOUR = "m 1118.33,439.32 -41.17,168.62 v 98.83 H 41.57 V 94.49 H 1077.17 V 438.46";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -102,7 +125,17 @@ function el(tag, attrs, parent) {
   return n;
 }
 
-// Dessin du plan
+// Dessin du plan : zones au sol d'abord (en dessous), puis le mur et les étagères
+const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+const zones = {};
+for (const [code, libelle, x, y, w, h, taille] of ZONES) {
+  const g = el("g", { class: "zone", "data-loc": code }, svg);
+  el("rect", { x, y, width: w, height: h, rx: 6 }, g);
+  el("rect", { x, y, width: w, height: h, rx: 6, class: "pulse" }, g);
+  const t = el("text", { x: x + w / 2, y: y + h / 2, "font-size": taille }, g);
+  t.textContent = libelle;
+  zones[norm(code)] = { code, g };
+}
 el("path", { d: CONTOUR, class: "contour" }, svg);
 const groupes = {}, sousTextes = {};
 for (const [id, x, y, w, h] of ETAGERES) {
@@ -118,25 +151,35 @@ for (const [id, x, y, w, h] of ETAGERES) {
   sousTextes[id] = st;
 }
 
-// Transforme la valeur de la colonne Emplacement en { lettre: [sous-emplacements] }
-// Accepte « A2 », « A » (étagère entière), une liste ou un texte séparé par des virgules.
+// Transforme la valeur de la colonne Emplacement en { etageres: { lettre: [sous-emplacements] }, zones: [codes] }
+// Accepte « A2 », « A » (étagère entière), un nom de zone (« Allée 2 », « Entrée »…),
+// une liste Grist ou un texte séparé par des virgules.
 function emplacements(valeur) {
-  const res = {};
+  const res = { etageres: {}, zones: [] };
   if (valeur == null || valeur === "") return res;
-  const liste = Array.isArray(valeur) ? valeur : String(valeur).split(/[\s,;\/]+/);
-  for (const v of liste) {
-    const m = /^([A-Z])\s*-?\s*([0-9]+)?$/.exec(String(v).trim().toUpperCase());
-    if (!m || !groupes[m[1]]) continue;
-    res[m[1]] = res[m[1]] || [];
-    if (m[2] && !res[m[1]].includes(m[2])) res[m[1]].push(m[2]);
+  const parties = Array.isArray(valeur) ? valeur : String(valeur).split(/[,;\/]+/);
+  for (const partie of parties) {
+    const zone = zones[norm(partie)];
+    if (zone) {
+      if (!res.zones.includes(zone.code)) res.zones.push(zone.code);
+      continue;
+    }
+    for (const v of String(partie).split(/\s+/)) {
+      const m = /^([A-Z])-?([0-9]+)?$/.exec(v.trim().toUpperCase());
+      if (!m || !groupes[m[1]]) continue;
+      res.etageres[m[1]] = res.etageres[m[1]] || [];
+      if (m[2] && !res.etageres[m[1]].includes(m[2])) res.etageres[m[1]].push(m[2]);
+    }
   }
-  for (const k in res) res[k].sort();
+  for (const k in res.etageres) res.etageres[k].sort();
   return res;
 }
 
 function afficher(nom, valeur) {
-  const locs = emplacements(valeur);
+  const tout = emplacements(valeur);
+  const locs = tout.etageres;
   const ids = Object.keys(locs).sort();
+  for (const z of Object.values(zones)) z.g.classList.toggle("on", tout.zones.includes(z.code));
   for (const id in groupes) {
     const on = id in locs;
     groupes[id].classList.toggle("on", on);
@@ -147,8 +190,8 @@ function afficher(nom, valeur) {
     lettre.setAttribute("y", Number(lettre.dataset.cy) - (sous ? 9 : 0));
   }
   elNom.textContent = nom || "Plan du stock";
-  if (ids.length) {
-    const codes = ids.flatMap(id => locs[id].length ? locs[id].map(n => id + n) : [id]);
+  if (ids.length || tout.zones.length) {
+    const codes = ids.flatMap(id => locs[id].length ? locs[id].map(n => id + n) : [id]).concat(tout.zones);
     elLoc.className = "ok";
     elLoc.textContent = (codes.length > 1 ? "→ Emplacements " : "→ Emplacement ") + codes.join(", ");
   } else if (nom) {
