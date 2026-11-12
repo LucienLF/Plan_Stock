@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan du stock</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --line: #262626;
+    --shelf: #ffffff;
+    --shelf-stroke: #4b5563;
+    --hl: #16b378;          /* vert Grist */
+    --hl-soft: rgba(22, 179, 120, 0.22);
+    --warn: #b45309;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e24;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: #d1d5db;
+      --shelf: #2a2a32;
+      --shelf-stroke: #9ca3af;
+      --hl-soft: rgba(22, 179, 120, 0.35);
+      --warn: #f59e0b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  header { padding: 8px 12px; border-bottom: 1px solid rgba(127,127,127,.25); min-height: 44px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #nom { font-weight: 600; font-size: 14px; }
+  #loc { font-size: 13px; color: var(--muted); }
+  #loc.ok { color: var(--hl); font-weight: 600; }
+  #loc.warn { color: var(--warn); }
+  main { flex: 1; min-height: 0; padding: 8px; }
+  svg { width: 100%; height: 100%; display: block; }
+  .contour { fill: none; stroke: var(--line); stroke-width: 4; stroke-linejoin: round; }
+  .shelf rect { fill: var(--shelf); stroke: var(--shelf-stroke); stroke-width: 2.7;
+    transition: fill .2s, stroke .2s, stroke-width .2s; }
+  .shelf text { fill: var(--text); font-size: 26px; text-anchor: middle; dominant-baseline: central;
+    pointer-events: none; transition: font-weight .2s; }
+  .shelf.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 6; }
+  .shelf.on text { font-weight: 700; fill: var(--hl); }
+  .shelf.on .pulse { fill: none; stroke: var(--hl); stroke-width: 4;
+    animation: pulse 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .pulse { display: none; }
+  .shelf.on .pulse { display: block; }
+  @keyframes pulse {
+    0%   { opacity: .9; transform: scale(1); }
+    100% { opacity: 0;  transform: scale(1.25); }
+  }
+  @media (prefers-reduced-motion: reduce) { .shelf.on .pulse { animation: none; opacity: .5; } }
+</style>
+</head>
+<body>
+<header>
+  <span id="nom">Plan du stock</span>
+  <span id="loc">Sélectionnez un matériel ou un consommable.</span>
+</header>
+<main>
+  <svg id="plan" viewBox="0 70 1140 660" role="img" aria-label="Plan du stock"></svg>
+</main>
+
+<script>
+// Étagères du plan (coordonnées reprises de « Plan du stock.svg »)
+const ETAGERES = [
+  ["A", 972.70, 640.85, 103.11, 65.32], ["B", 868.76, 640.85, 103.11, 65.32],
+  ["C", 764.82, 640.85, 103.11, 65.32], ["D", 660.89, 640.85, 103.11, 65.32],
+  ["E", 556.95, 640.85, 103.11, 65.32], ["F", 453.01, 640.85, 103.11, 65.32],
+  ["G", 303.72, 640.85, 103.11, 65.32], ["H", 144.98, 640.85, 103.11, 65.32],
+  ["I",  41.04, 640.85, 103.11, 65.32],
+  ["J",  42.93, 303.72, 65.32, 103.11], ["K",  42.93, 199.78, 65.32, 103.11],
+  ["L",  42.93,  95.85, 65.32, 103.11],
+  ["M", 258.37,  95.85, 103.11, 65.32], ["N", 362.30,  95.85, 103.11, 65.32],
+  ["O", 466.24, 303.72, 65.32, 103.11], ["P", 466.24, 199.78, 65.32, 103.11],
+  ["Q", 466.24,  95.85, 65.32, 103.11],
+  ["R", 674.11, 303.72, 65.32, 103.11], ["S", 674.11, 199.78, 65.32, 103.11],
+  ["T", 674.11,  95.85, 65.32, 103.11],
+  ["U", 851.75, 303.72, 65.32, 103.11], ["V", 851.75, 199.78, 65.32, 103.11],
+  ["W", 851.75,  95.85, 65.32, 103.11],
+  ["X", 1012.38, 303.72, 65.32, 103.11], ["Y", 1012.38, 199.78, 65.32, 103.11],
+  ["Z", 1012.38,  95.85, 65.32, 103.11],
+];
+const CONTOUR = "m 1118.33,439.32 -41.17,168.62 v 98.83 H 41.57 V 94.49 H 1077.17 V 438.46";
+
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("plan");
+const elNom = document.getElementById("nom");
+const elLoc = document.getElementById("loc");
+
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+
+// Dessin du plan
+el("path", { d: CONTOUR, class: "contour" }, svg);
+const groupes = {};
+for (const [id, x, y, w, h] of ETAGERES) {
+  const g = el("g", { class: "shelf", "data-loc": id }, svg);
+  el("rect", { x, y, width: w, height: h }, g);
+  el("rect", { x, y, width: w, height: h, class: "pulse" }, g);
+  const t = el("text", { x: x + w / 2, y: y + h / 2 }, g);
+  t.textContent = id;
+  groupes[id] = g;
+}
+
+// Transforme la valeur de la colonne Emplacement en liste de lettres
+function lettres(valeur) {
+  if (valeur == null || valeur === "") return [];
+  let liste;
+  if (Array.isArray(valeur)) {
+    liste = valeur;   // Grist envoie déjà la liste décodée (["L", "C"]…)
+  } else {
+    liste = String(valeur).split(/[\s,;\/]+/);
+  }
+  return [...new Set(liste.map(v => String(v).trim().toUpperCase()).filter(v => groupes[v]))];
+}
+
+function afficher(nom, valeur) {
+  const locs = lettres(valeur);
+  for (const id in groupes) groupes[id].classList.toggle("on", locs.includes(id));
+  elNom.textContent = nom || "Plan du stock";
+  if (locs.length) {
+    elLoc.className = "ok";
+    elLoc.textContent = (locs.length > 1 ? "→ Étagères " : "→ Étagère ") + locs.join(", ");
+  } else if (nom) {
+    elLoc.className = "warn";
+    elLoc.textContent = "Emplacement non renseigné";
+  } else {
+    elLoc.className = "";
+    elLoc.textContent = "Sélectionnez un matériel ou un consommable.";
+  }
+}
+
+function demarrer() {
+  if (!window.grist) {
+    elLoc.className = "warn";
+    elLoc.textContent = "API Grist introuvable : ouvrez ce plan depuis un widget personnalisé Grist.";
+    return;
+  }
+  grist.ready({
+    requiredAccess: "read table",
+    columns: [
+      { name: "Emplacement", title: "Emplacement (étagère A–Z)", type: "Any" },
+      { name: "Nom", title: "Nom affiché", type: "Any", optional: true },
+    ],
+  });
+  grist.onRecord(record => {
+    if (!record) { afficher("", null); return; }
+    // Colonnes associées dans le panneau du widget, sinon noms par défaut du document
+    const m = grist.mapColumnNames(record) || {
+      Emplacement: record.Emplacement,
+      Nom: record.Libelle != null ? record.Libelle : record.Designation,
+    };
+    if (m.Emplacement === undefined) {
+      elLoc.className = "warn";
+      elLoc.textContent = "Choisissez la colonne « Emplacement » dans les options du widget.";
+      return;
+    }
+    afficher(m.Nom != null ? String(m.Nom) : "Ligne " + record.id, m.Emplacement);
+  });
+  grist.onRecords(() => {}); // garde le widget à jour quand les données changent
+}
+
+// Charge l'API depuis ton serveur Grist, sinon depuis getgrist.com
+(function chargerApi() {
+  const sources = [
+    "http://192.168.100.10:8484/grist-plugin-api.js",
+    "https://docs.getgrist.com/grist-plugin-api.js",
+  ];
+  let i = 0;
+  (function suivant() {
+    if (i >= sources.length) { demarrer(); return; }
+    const s = document.createElement("script");
+    s.src = sources[i++];
+    s.onload = demarrer;
+    s.onerror = suivant;
+    document.head.appendChild(s);
+  })();
+})();
+</script>
+</body>
+</html>
