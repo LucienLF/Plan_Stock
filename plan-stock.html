@@ -47,6 +47,7 @@
     pointer-events: none; transition: font-weight .2s; }
   .shelf.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 6; }
   .shelf.on text { font-weight: 700; fill: var(--hl); }
+  .shelf text.sous { font-size: 17px; font-weight: 700; }
   .shelf.on .pulse { fill: none; stroke: var(--hl); stroke-width: 4;
     animation: pulse 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
   .pulse { display: none; }
@@ -103,35 +104,53 @@ function el(tag, attrs, parent) {
 
 // Dessin du plan
 el("path", { d: CONTOUR, class: "contour" }, svg);
-const groupes = {};
+const groupes = {}, sousTextes = {};
 for (const [id, x, y, w, h] of ETAGERES) {
   const g = el("g", { class: "shelf", "data-loc": id }, svg);
   el("rect", { x, y, width: w, height: h }, g);
   el("rect", { x, y, width: w, height: h, class: "pulse" }, g);
-  const t = el("text", { x: x + w / 2, y: y + h / 2 }, g);
+  const t = el("text", { x: x + w / 2, y: y + h / 2, class: "lettre" }, g);
   t.textContent = id;
+  t.dataset.cy = y + h / 2;
+  // sous-emplacement(s) affiché(s) sous la lettre quand l'étagère est allumée
+  const st = el("text", { x: x + w / 2, y: y + h / 2 + 15, class: "sous" }, g);
   groupes[id] = g;
+  sousTextes[id] = st;
 }
 
-// Transforme la valeur de la colonne Emplacement en liste de lettres
-function lettres(valeur) {
-  if (valeur == null || valeur === "") return [];
-  let liste;
-  if (Array.isArray(valeur)) {
-    liste = valeur;   // Grist envoie déjà la liste décodée (["L", "C"]…)
-  } else {
-    liste = String(valeur).split(/[\s,;\/]+/);
+// Transforme la valeur de la colonne Emplacement en { lettre: [sous-emplacements] }
+// Accepte « A2 », « A » (étagère entière), une liste ou un texte séparé par des virgules.
+function emplacements(valeur) {
+  const res = {};
+  if (valeur == null || valeur === "") return res;
+  const liste = Array.isArray(valeur) ? valeur : String(valeur).split(/[\s,;\/]+/);
+  for (const v of liste) {
+    const m = /^([A-Z])\s*-?\s*([0-9]+)?$/.exec(String(v).trim().toUpperCase());
+    if (!m || !groupes[m[1]]) continue;
+    res[m[1]] = res[m[1]] || [];
+    if (m[2] && !res[m[1]].includes(m[2])) res[m[1]].push(m[2]);
   }
-  return [...new Set(liste.map(v => String(v).trim().toUpperCase()).filter(v => groupes[v]))];
+  for (const k in res) res[k].sort();
+  return res;
 }
 
 function afficher(nom, valeur) {
-  const locs = lettres(valeur);
-  for (const id in groupes) groupes[id].classList.toggle("on", locs.includes(id));
+  const locs = emplacements(valeur);
+  const ids = Object.keys(locs).sort();
+  for (const id in groupes) {
+    const on = id in locs;
+    groupes[id].classList.toggle("on", on);
+    const sous = on && locs[id].length ? locs[id].join(" · ") : "";
+    sousTextes[id].textContent = sous;
+    // remonte un peu la lettre pour laisser la place au sous-emplacement
+    const lettre = groupes[id].querySelector("text.lettre");
+    lettre.setAttribute("y", Number(lettre.dataset.cy) - (sous ? 9 : 0));
+  }
   elNom.textContent = nom || "Plan du stock";
-  if (locs.length) {
+  if (ids.length) {
+    const codes = ids.flatMap(id => locs[id].length ? locs[id].map(n => id + n) : [id]);
     elLoc.className = "ok";
-    elLoc.textContent = (locs.length > 1 ? "→ Étagères " : "→ Étagère ") + locs.join(", ");
+    elLoc.textContent = (codes.length > 1 ? "→ Emplacements " : "→ Emplacement ") + codes.join(", ");
   } else if (nom) {
     elLoc.className = "warn";
     elLoc.textContent = "Emplacement non renseigné";
@@ -150,7 +169,7 @@ function demarrer() {
   grist.ready({
     requiredAccess: "read table",
     columns: [
-      { name: "Emplacement", title: "Emplacement (étagère A–Z)", type: "Any" },
+      { name: "Emplacement", title: "Emplacement (ex. A2)", type: "Any" },
       { name: "Nom", title: "Nom affiché", type: "Any", optional: true },
     ],
   });
