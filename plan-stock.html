@@ -6,80 +6,282 @@
 <title>Plan du stock</title>
 <style>
   :root {
-    --bg: #ffffff;
-    --text: #1f2328;
-    --muted: #6b7280;
-    --line: #262626;
+    --bg: #f6f4ef;
+    --surface: #fffdf9;
+    --text: #2b2a27;
+    --muted: #8a857b;
+    --wall: #4a463f;
     --shelf: #ffffff;
-    --shelf-stroke: #4b5563;
-    --hl: #16b378;          /* vert Grist */
-    --hl-soft: rgba(22, 179, 120, 0.22);
-    --warn: #b45309;
+    --shelf-stroke: #d8d1c3;
+    --zone: #ede8dd;
+    --zone-stroke: #dcd4c4;
+    --accent: #16b378;          /* vert Grist */
+    --accent-strong: #0e8f5f;
+    --accent-soft: rgba(22, 179, 120, 0.16);
+    --warn: #b7791f;
+    --warn-soft: rgba(183, 121, 31, 0.12);
+    --shadow: rgba(60, 50, 30, 0.10);
+    --radius: 12px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1e1e24;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --line: #d1d5db;
-      --shelf: #2a2a32;
-      --shelf-stroke: #9ca3af;
-      --hl-soft: rgba(22, 179, 120, 0.35);
-      --warn: #f59e0b;
+      --bg: #1b1d1f;
+      --surface: #24272a;
+      --text: #e8e6e1;
+      --muted: #9a968d;
+      --wall: #cfcac0;
+      --shelf: #2c3034;
+      --shelf-stroke: #444a50;
+      --zone: #23272a;
+      --zone-stroke: #363c41;
+      --accent-strong: #3fd39a;
+      --accent-soft: rgba(22, 179, 120, 0.26);
+      --warn: #f0b252;
+      --warn-soft: rgba(240, 178, 82, 0.14);
+      --shadow: rgba(0, 0, 0, 0.35);
     }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-  body { display: flex; flex-direction: column; }
-  header { padding: 8px 12px; border-bottom: 1px solid rgba(127,127,127,.25); min-height: 44px;
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  #nom { font-weight: 600; font-size: 14px; }
-  #loc { font-size: 13px; color: var(--muted); }
-  #loc.ok { color: var(--hl); font-weight: 600; }
-  #loc.warn { color: var(--warn); }
-  main { flex: 1; min-height: 0; padding: 8px; }
-  svg { width: 100%; height: 100%; display: block; }
-  .contour { fill: none; stroke: var(--line); stroke-width: 4; stroke-linejoin: round; }
-  .shelf rect { fill: var(--shelf); stroke: var(--shelf-stroke); stroke-width: 2.7;
-    transition: fill .2s, stroke .2s, stroke-width .2s; }
-  .shelf text { fill: var(--text); font-size: 26px; text-anchor: middle; dominant-baseline: central;
-    pointer-events: none; transition: font-weight .2s; }
-  .shelf.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 6; }
-  .shelf.on text { font-weight: 700; fill: var(--hl); }
-  .shelf text.sous { font-size: 17px; font-weight: 700; }
-  .zone rect { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 10 7;
-    transition: fill .2s, stroke .2s; }
-  .zone text { fill: var(--muted); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-  .zone.on rect { fill: var(--hl-soft); stroke: var(--hl); stroke-width: 4; stroke-dasharray: none; }
-  .zone.on text { fill: var(--hl); font-weight: 700; }
-  .shelf.on .pulse, .zone.on .pulse { fill: none; stroke: var(--hl); stroke-width: 4; stroke-dasharray: none;
-    animation: pulse 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-  .pulse { display: none; }
-  .shelf.on .pulse, .zone.on .pulse { display: block; }
-  .zone.on .pulse { animation-name: pulse-zone; }
-  @keyframes pulse {
-    0%   { opacity: .9; transform: scale(1); }
-    100% { opacity: 0;  transform: scale(1.12); }
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- En-tête : fiche de l'article + recherche + outils ---------- */
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; flex-wrap: wrap; }
+  .fiche { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  #nom { font-weight: 650; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #loc { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 13px; color: var(--muted); min-height: 22px; }
+  .puce { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent-strong); font-weight: 650; font-size: 12.5px;
+    border: 0; cursor: pointer; }
+  .puce:hover { filter: brightness(0.96); }
+  .puce.zone { background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .avert { color: var(--warn); background: var(--warn-soft); padding: 2px 9px; border-radius: 999px; font-weight: 600; font-size: 12.5px; }
+
+  .recherche { position: relative; flex: 1 1 240px; max-width: 360px; }
+  .recherche input { width: 100%; height: 34px; padding: 0 12px 0 34px; border-radius: 999px;
+    border: 1px solid var(--shelf-stroke); background: var(--surface); color: var(--text); font: inherit;
+    outline: none; transition: border-color .15s, box-shadow .15s; }
+  .recherche input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .recherche svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+  .resultats { position: absolute; z-index: 20; top: 40px; left: 0; right: 0; margin: 0; padding: 6px; list-style: none;
+    background: var(--surface); border-radius: var(--radius); box-shadow: 0 10px 30px var(--shadow), 0 0 0 1px var(--shelf-stroke);
+    max-height: 300px; overflow: auto; display: none; }
+  .resultats.ouvert { display: block; }
+  .resultats li { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+  .resultats li .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .resultats li .c { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .resultats li.actif, .resultats li:hover { background: var(--accent-soft); }
+  .resultats li.vide { color: var(--muted); cursor: default; background: none; }
+
+  .outils { display: flex; gap: 4px; }
+  .outil { width: 34px; height: 34px; border-radius: 10px; border: 1px solid transparent; background: transparent;
+    display: grid; place-items: center; cursor: pointer; color: var(--muted); transition: background .15s, color .15s; }
+  .outil:hover { background: var(--surface); color: var(--text); border-color: var(--shelf-stroke); }
+  .outil[aria-pressed="true"] { color: var(--accent-strong); background: var(--accent-soft); }
+  .outil svg { width: 18px; height: 18px; }
+
+  .demo { margin: 0 12px 6px; padding: 6px 10px; border-radius: 10px; font-size: 12.5px;
+    background: var(--warn-soft); color: var(--warn); }
+
+  /* ---------- Plan ---------- */
+  main { flex: 1; min-height: 0; display: flex; gap: 10px; padding: 0 10px 10px; position: relative; }
+  .carte { flex: 1; min-width: 0; position: relative; background: var(--surface); border-radius: 16px;
+    box-shadow: 0 1px 2px var(--shadow), 0 0 0 1px var(--shelf-stroke) inset; overflow: hidden; }
+  svg#plan { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; }
+  svg#plan.glisse { cursor: grabbing; }
+
+  .contour { fill: none; stroke: var(--wall); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+
+  .zone > rect.fond { fill: var(--zone); stroke: var(--zone-stroke); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+  .zone text { fill: var(--muted); text-anchor: middle; dominant-baseline: central; pointer-events: none;
+    font-weight: 500; letter-spacing: .02em; transition: fill .3s; }
+  .zone:hover > rect.fond { stroke: var(--muted); }
+  .zone.on > rect.fond { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .zone.on text { fill: var(--accent-strong); font-weight: 700; }
+
+  .shelf { cursor: pointer; }
+  .shelf > rect.fond { fill: var(--shelf); stroke: var(--shelf-stroke); stroke-width: 2;
+    filter: url(#ombre); transition: fill .3s, stroke .3s, stroke-width .3s; }
+  .shelf:hover > rect.fond { stroke: var(--muted); }
+  .shelf text.lettre { fill: var(--text); font-size: 24px; font-weight: 600; text-anchor: middle; dominant-baseline: central;
+    pointer-events: none; transition: fill .3s; }
+  .shelf.on > rect.fond { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 4; }
+  .shelf.on text.lettre { fill: var(--accent-strong); font-weight: 750; }
+  .shelf.ouvert > rect.fond, .zone.ouvert > rect.fond { stroke: var(--text); stroke-width: 3; }
+
+  /* Sous-emplacements : pastilles 1 · 2 · 3 visibles quand l'étagère est allumée ou survolée */
+  .niveaux { opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .shelf.on .niveaux, .shelf:hover .niveaux, .shelf.ouvert .niveaux { opacity: 1; }
+  .niveaux rect { fill: var(--surface); stroke: var(--shelf-stroke); stroke-width: 1.2; }
+  .niveaux text { fill: var(--muted); font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .niveaux g.actif rect { fill: var(--accent); stroke: var(--accent); }
+  .niveaux g.actif text { fill: #fff; }
+
+  .compte circle { fill: var(--bg); stroke: var(--shelf-stroke); stroke-width: 1; }
+  .compte text { fill: var(--muted); font-size: 10.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+  .shelf.on .compte circle { fill: var(--accent); stroke: var(--accent); }
+  .shelf.on .compte text { fill: #fff; }
+
+  /* Halo qui « respire » autour de l'emplacement trouvé */
+  .halo { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0; pointer-events: none; }
+  .on > .halo { animation: respire 2.4s ease-in-out infinite; }
+  @keyframes respire {
+    0%, 100% { opacity: .15; stroke-width: 2; }
+    50%      { opacity: .7;  stroke-width: 9; }
   }
-  @keyframes pulse-zone {
-    0%   { opacity: .9; transform: scale(1); }
-    100% { opacity: 0;  transform: scale(1.03); }
+
+  /* Itinéraire depuis l'entrée */
+  .chemin { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: .1 13; opacity: .9; animation: avance 1.2s linear infinite; pointer-events: none; }
+  @keyframes avance { to { stroke-dashoffset: -13.1; } }
+  .depart circle { fill: var(--surface); stroke: var(--accent); stroke-width: 3; }
+  .depart text { fill: var(--accent-strong); font-size: 13px; font-weight: 700; text-anchor: middle; }
+  .cache { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .on > .halo { animation: none; opacity: .45; stroke-width: 6; }
+    .chemin { animation: none; }
   }
-  @media (prefers-reduced-motion: reduce) { .shelf.on .pulse, .zone.on .pulse { animation: none; opacity: .5; } }
+
+  .bulle { position: absolute; z-index: 10; pointer-events: none; padding: 5px 9px; border-radius: 8px; font-size: 12.5px;
+    background: var(--text); color: var(--bg); white-space: nowrap; opacity: 0; transform: translateY(4px);
+    transition: opacity .12s, transform .12s; }
+  .bulle.visible { opacity: 1; transform: none; }
+
+  .legende { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 12px; font-size: 11.5px; color: var(--muted);
+    background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 4px 10px; border-radius: 999px; pointer-events: none;
+    transition: opacity .3s; }
+  .legende i { display: inline-block; width: 12px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .legende .e { background: var(--shelf); box-shadow: 0 0 0 1.5px var(--shelf-stroke); }
+  .legende .z { background: var(--zone); box-shadow: 0 0 0 1px var(--zone-stroke); }
+
+  /* ---------- Panneau : contenu d'une étagère ou d'une zone ---------- */
+  aside { width: 270px; flex: none; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column;
+    box-shadow: 0 1px 2px var(--shadow), 0 0 0 1px var(--shelf-stroke) inset; overflow: hidden;
+    transition: transform .25s ease, opacity .25s ease; }
+  aside[hidden] { display: none; }
+  .panneau-tete { display: flex; align-items: flex-start; gap: 8px; padding: 12px 12px 8px; }
+  .panneau-tete div { flex: 1; min-width: 0; }
+  #ptitre { font-weight: 700; font-size: 15px; }
+  #psous { color: var(--muted); font-size: 12.5px; }
+  #pliste { flex: 1; overflow: auto; padding: 0 8px 10px; }
+  .groupe { margin: 6px 4px 2px; font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .article { display: flex; width: 100%; text-align: left; gap: 8px; align-items: center; padding: 7px 8px;
+    border: 0; background: none; border-radius: 9px; cursor: pointer; }
+  .article:hover { background: var(--accent-soft); }
+  .article.courant { background: var(--accent-soft); font-weight: 650; }
+  .article .pt { width: 7px; height: 7px; border-radius: 50%; background: var(--shelf-stroke); flex: none; }
+  .article.courant .pt { background: var(--accent); }
+  .article span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vide-panneau { color: var(--muted); padding: 18px 8px; text-align: center; font-size: 13px; }
+
+  @media (max-width: 640px) {
+    header { padding: 8px 10px 6px; }
+    .recherche { order: 3; max-width: none; flex-basis: 100%; }
+    main { flex-direction: column; padding: 0 8px 8px; }
+    aside { width: auto; max-height: 45%; }
+    .legende { display: none; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <span id="nom">Plan du stock</span>
-  <span id="loc">Sélectionnez un matériel ou un consommable.</span>
+  <div class="fiche">
+    <div id="nom">Plan du stock</div>
+    <div id="loc">Sélectionnez un article ou cliquez sur une étagère.</div>
+  </div>
+  <div class="recherche">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" autocomplete="off" placeholder="Article ou emplacement…  ( / )" aria-label="Rechercher un article ou un emplacement">
+    <ul class="resultats" id="resultats" role="listbox"></ul>
+  </div>
+  <div class="outils">
+    <button class="outil" id="bChemin" aria-pressed="true" title="Itinéraire depuis l'entrée">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M7 19h7a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h7" stroke-dasharray="2 3"/></svg>
+    </button>
+    <button class="outil" id="bZoom" aria-pressed="true" title="Zoomer automatiquement sur l'emplacement">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+    </button>
+    <button class="outil" id="bVue" title="Vue d'ensemble (double-clic sur le plan)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
 </header>
+<div class="demo" id="demo" hidden>Mode démo, avec des données fictives. Ajoutez cette page comme widget personnalisé dans Grist pour voir votre stock.</div>
 <main>
-  <svg id="plan" viewBox="0 70 1140 660" role="img" aria-label="Plan du stock"></svg>
+  <div class="carte">
+    <svg id="plan" viewBox="0 70 1140 660" role="img" aria-label="Plan du stock">
+      <defs>
+        <filter id="ombre" x="-20%" y="-20%" width="140%" height="150%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#3c321e" flood-opacity=".12"/>
+        </filter>
+      </defs>
+      <g id="calqueZones"></g>
+      <g id="calqueMurs"></g>
+      <g id="calqueChemin"></g>
+      <g id="calqueEtageres"></g>
+    </svg>
+    <div class="bulle" id="bulle"></div>
+    <div class="legende"><span><i class="e"></i>Étagère</span><span><i class="z"></i>Zone au sol</span></div>
+  </div>
+  <aside id="panneau" hidden aria-live="polite">
+    <div class="panneau-tete">
+      <div><div id="ptitre"></div><div id="psous"></div></div>
+      <button class="outil" id="pfermer" title="Fermer (Échap)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div id="pliste"></div>
+  </aside>
 </main>
 
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  PLAN DU STOCK : widget personnalisé Grist                           ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+
+  À QUOI ÇA SERT
+    Afficher sur le plan du stock où se trouve l'article sélectionné dans Grist,
+    et inversement retrouver ce qui est rangé sur une étagère ou une zone.
+
+  COMMENT ÇA MARCHE (vue d'ensemble)
+    1. Au chargement, on dessine le plan en SVG à partir des tableaux ETAGERES,
+       ZONES et CONTOUR (aucune image : tout est généré en JavaScript).
+    2. On charge l'API Grist (grist-plugin-api.js). Si la page est ouverte
+       dans Grist → demarrer() s'abonne aux données. Sinon → demo().
+    3. Grist envoie deux types de messages :
+         • onRecords(lignes)  : toute la table → recevoirArticles() construit la
+                                liste `articles` (sert aux compteurs, au panneau
+                                et à la recherche) ;
+         • onRecord(ligne)    : la ligne où se trouve le curseur → devient
+                                `courant`, puis afficher() met tout à jour.
+    4. afficher() est le point central : il allume les étagères/zones, coche
+       les pastilles 1·2·3, remplit l'en-tête, trace l'itinéraire et zoome.
+    5. Quand l'utilisateur clique un article (panneau ou recherche), on appelle
+       grist.setCursorPos() : Grist déplace son curseur puis renvoie onRecord,
+       ce qui boucle sur l'étape 3. Le widget ne modifie jamais les données.
+
+  COLONNES (à associer dans le panneau de droite de Grist, « Widget personnalisé »)
+    • Emplacement (obligatoire) : « A2 », « A » (étagère entière), « A1 A3 »,
+      « B1, C2 », une liste de choix, ou un nom de zone (« Allée 2 », « Entrée »…).
+    • Nom (facultatif) : texte affiché pour l'article. Sans association, le widget
+      essaie les colonnes Emplacement et Libelle/Designation du document.
+
+  MODIFIER LE PLAN
+    • Déplacer/ajouter une étagère : éditer ETAGERES (lettre, x, y, largeur, hauteur).
+    • Ajouter une zone au sol : une ligne dans ZONES (le 1er champ doit être
+      écrit exactement comme dans la colonne Emplacement de Grist).
+    • Si l'itinéraire passe mal : régler PORTE, COULOIR_Y et ACCES_LATERAL.
+-->
 <script>
-// Étagères du plan (coordonnées reprises de « Plan du stock.svg »)
+// ======================================================================
+//  Données du plan (coordonnées reprises de « Plan du stock.svg »)
+// ======================================================================
+// Une ligne par étagère : [lettre, x, y, largeur, hauteur] en unités du SVG.
+// Les étagères larges (rangée du bas) sont horizontales, les autres verticales.
 const ETAGERES = [
   // Rangée du bas : espaces laissés entre H et G, entre G et F, et entre A et le mur d'entrée
   ["A", 907, 640.85, 95, 65.32], ["B", 812, 640.85, 95, 65.32],
@@ -112,103 +314,495 @@ const ZONES = [
 ];
 // Mur avec la porte d'entrée à droite (ouverture + battant)
 const CONTOUR = "m 1118.33,439.32 -41.17,168.62 v 98.83 H 41.57 V 94.49 H 1077.17 V 438.46";
+const NB_NIVEAUX = 3;                         // sous-emplacements 1, 2, 3 par étagère
 
+// Itinéraire : on part de la porte, on longe l'allée centrale, puis on remonte l'allée qui dessert l'emplacement
+const PORTE = [1092, 588];
+const COULOIR_Y = 588;      // on longe le bas de l'allée centrale, sous son libellé
+const ACCES_LATERAL = { // x de l'allée où l'on se place pour les étagères verticales
+  J: 130, K: 130, L: 130, O: 550, P: 550, Q: 550, R: 656, S: 656, T: 656,
+  U: 834, V: 834, W: 834, X: 994, Y: 994, Z: 994,
+};
+
+// ======================================================================
+//  Outils
+// ======================================================================
+// Espace de noms obligatoire pour créer des éléments SVG avec createElementNS.
 const NS = "http://www.w3.org/2000/svg";
-const svg = document.getElementById("plan");
-const elNom = document.getElementById("nom");
-const elLoc = document.getElementById("loc");
-
+const $ = id => document.getElementById(id);
+const svg = $("plan");
+// Cadre affiché en « vue d'ensemble » (x, y, largeur, hauteur du viewBox).
+const VUE_BASE = { x: 0, y: 70, w: 1140, h: 660 };
+// Normalise un texte pour les comparaisons : sans accents, minuscules, espaces simplifiés.
+// « Allée  Centrale » et « allee centrale » donnent la même clé.
+const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
+// Petite mémoire locale (localStorage) pour retenir les boutons Itinéraire / Zoom.
+// Les try/catch évitent une erreur si le navigateur bloque le stockage dans l'iframe Grist.
+const memo = {
+  lire(k, d) { try { const v = localStorage.getItem("planStock." + k); return v == null ? d : v === "1"; } catch { return d; } },
+  ecrire(k, v) { try { localStorage.setItem("planStock." + k, v ? "1" : "0"); } catch {} },
+};
+// Crée un élément SVG avec ses attributs et l'ajoute éventuellement à un parent.
 function el(tag, attrs, parent) {
   const n = document.createElementNS(NS, tag);
   for (const k in attrs) n.setAttribute(k, attrs[k]);
   if (parent) parent.appendChild(n);
   return n;
 }
-
-// Dessin du plan : zones au sol d'abord (en dessous), puis le mur et les étagères
-const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase().replace(/\s+/g, " ");
-const zones = {};
-for (const [code, libelle, x, y, w, h, taille] of ZONES) {
-  const g = el("g", { class: "zone", "data-loc": code }, svg);
-  el("rect", { x, y, width: w, height: h, rx: 6 }, g);
-  el("rect", { x, y, width: w, height: h, rx: 6, class: "pulse" }, g);
-  const t = el("text", { x: x + w / 2, y: y + h / 2, "font-size": taille }, g);
-  t.textContent = libelle;
-  zones[norm(code)] = { code, g };
-}
-el("path", { d: CONTOUR, class: "contour" }, svg);
-const groupes = {}, sousTextes = {};
-for (const [id, x, y, w, h] of ETAGERES) {
-  const g = el("g", { class: "shelf", "data-loc": id }, svg);
-  el("rect", { x, y, width: w, height: h }, g);
-  el("rect", { x, y, width: w, height: h, class: "pulse" }, g);
-  const t = el("text", { x: x + w / 2, y: y + h / 2, class: "lettre" }, g);
-  t.textContent = id;
-  t.dataset.cy = y + h / 2;
-  // sous-emplacement(s) affiché(s) sous la lettre quand l'étagère est allumée
-  const st = el("text", { x: x + w / 2, y: y + h / 2 + 15, class: "sous" }, g);
-  groupes[id] = g;
-  sousTextes[id] = st;
+// Équivalent HTML de el() : h("button", { className: "x" }, enfantA, enfantB).
+function h(tag, props = {}, ...enfants) {
+  const n = Object.assign(document.createElement(tag), props);
+  for (const e of enfants) n.append(e);
+  return n;
 }
 
-// Transforme la valeur de la colonne Emplacement en { etageres: { lettre: [sous-emplacements] }, zones: [codes] }
-// Accepte « A2 », « A » (étagère entière), un nom de zone (« Allée 2 », « Entrée »…),
-// une liste Grist ou un texte séparé par des virgules.
+// ======================================================================
+//  Dessin du plan
+// ======================================================================
+const zones = {};      // norm(code) -> { code, libelle, g, box }
+const etageres = {};   // lettre -> { g, box, niveaux, compte }
+
+// Chaque zone = un groupe <g> : un fond arrondi, un halo (visible quand elle est trouvée) et son libellé.
+for (const [code, libelle, x, y, w, hgt, taille] of ZONES) {
+  const g = el("g", { class: "zone", "data-zone": code, tabindex: 0 }, $("calqueZones"));
+  el("rect", { class: "fond", x, y, width: w, height: hgt, rx: 14 }, g);
+  el("rect", { class: "halo", x: x - 3, y: y - 3, width: w + 6, height: hgt + 6, rx: 17 }, g);
+  el("text", { x: x + w / 2, y: y + hgt / 2, "font-size": taille }, g).textContent = libelle;
+  zones[norm(code)] = { code, libelle, g, box: { x, y, w, h: hgt } };
+}
+el("path", { d: CONTOUR, class: "contour" }, $("calqueMurs"));
+
+// Chaque étagère = un groupe <g> : fond, halo, lettre, pastilles de niveaux 1·2·3 et badge du nombre
+// d'articles. Les classes CSS .on / .ouvert sur le <g> pilotent tout l'aspect (voir le <style>).
+for (const [id, x, y, w, hgt] of ETAGERES) {
+  const g = el("g", { class: "shelf", "data-etagere": id, tabindex: 0, role: "button", "aria-label": "Étagère " + id }, $("calqueEtageres"));
+  el("rect", { class: "fond", x, y, width: w, height: hgt, rx: 9 }, g);
+  el("rect", { class: "halo", x: x - 4, y: y - 4, width: w + 8, height: hgt + 8, rx: 13 }, g);
+  const cx = x + w / 2, cy = y + hgt / 2;
+  el("text", { class: "lettre", x: cx, y: cy - 9 }, g).textContent = id;
+  // pastilles de niveaux
+  const niv = el("g", { class: "niveaux" }, g);
+  const pw = w > 80 ? 22 : 17, ph = 15, gap = 4;
+  const total = NB_NIVEAUX * pw + (NB_NIVEAUX - 1) * gap;
+  const pastilles = {};
+  for (let i = 1; i <= NB_NIVEAUX; i++) {
+    const px = cx - total / 2 + (i - 1) * (pw + gap);
+    const p = el("g", {}, niv);
+    el("rect", { x: px, y: cy + 8, width: pw, height: ph, rx: 7.5 }, p);
+    el("text", { x: px + pw / 2, y: cy + 8 + ph / 2 + .5 }, p).textContent = i;
+    pastilles[i] = p;
+  }
+  // nombre d'articles rangés
+  const compte = el("g", { class: "compte cache" }, g);
+  el("circle", { cx: x + w - 13, cy: y + 13, r: 9 }, compte);
+  const ct = el("text", { x: x + w - 13, y: y + 13.5 }, compte);
+  etageres[id] = { g, box: { x, y, w, h: hgt }, pastilles, compte, ct, lettre: g.querySelector(".lettre") };
+}
+
+// Itinéraire
+// Tracé pointillé de l'itinéraire + point de départ à la porte (cachés tant qu'il n'y a pas de cible).
+const chemin = el("path", { class: "chemin cache" }, $("calqueChemin"));
+const depart = el("g", { class: "depart cache" }, $("calqueChemin"));
+el("circle", { cx: PORTE[0], cy: PORTE[1], r: 8 }, depart);
+
+// ======================================================================
+//  Lecture de la colonne Emplacement
+//  Accepte « A2 », « A » (étagère entière), « A1 A3 », un nom de zone (« Allée 2 », « Entrée »…),
+//  une liste Grist ou un texte séparé par des virgules / points-virgules / barres obliques.
+// ======================================================================
+// Renvoie { etageres: { A: ["1", "3"], B: [] }, zones: ["Allée 2"] }.
+// Un tableau vide pour une étagère signifie « étagère entière, sans niveau précis ».
 function emplacements(valeur) {
   const res = { etageres: {}, zones: [] };
   if (valeur == null || valeur === "") return res;
   const parties = Array.isArray(valeur) ? valeur : String(valeur).split(/[,;\/]+/);
   for (const partie of parties) {
     const zone = zones[norm(partie)];
-    if (zone) {
-      if (!res.zones.includes(zone.code)) res.zones.push(zone.code);
-      continue;
-    }
+    if (zone) { if (!res.zones.includes(zone.code)) res.zones.push(zone.code); continue; }
     for (const v of String(partie).split(/\s+/)) {
       const m = /^([A-Z])-?([0-9]+)?$/.exec(v.trim().toUpperCase());
-      if (!m || !groupes[m[1]]) continue;
+      if (!m || !etageres[m[1]]) continue;
       res.etageres[m[1]] = res.etageres[m[1]] || [];
       if (m[2] && !res.etageres[m[1]].includes(m[2])) res.etageres[m[1]].push(m[2]);
     }
   }
-  for (const k in res.etageres) res.etageres[k].sort();
+  for (const k in res.etageres) res.etageres[k].sort((a, b) => a - b);
   return res;
 }
+// Transforme le résultat d'emplacements() en liste lisible : ["A1", "A3", "B", "Allée 2"].
+function codes(locs) {
+  return Object.keys(locs.etageres).sort()
+    .flatMap(id => locs.etageres[id].length ? locs.etageres[id].map(n => id + n) : [id])
+    .concat(locs.zones);
+}
 
-function afficher(nom, valeur) {
-  const tout = emplacements(valeur);
-  const locs = tout.etageres;
-  const ids = Object.keys(locs).sort();
-  for (const z of Object.values(zones)) z.g.classList.toggle("on", tout.zones.includes(z.code));
-  for (const id in groupes) {
-    const on = id in locs;
-    groupes[id].classList.toggle("on", on);
-    const sous = on && locs[id].length ? locs[id].join(" · ") : "";
-    sousTextes[id].textContent = sous;
-    // remonte un peu la lettre pour laisser la place au sous-emplacement
-    const lettre = groupes[id].querySelector("text.lettre");
-    lettre.setAttribute("y", Number(lettre.dataset.cy) - (sous ? 9 : 0));
+// ======================================================================
+//  État
+// ======================================================================
+// Variables partagées par tout le widget. Tout l'affichage se recalcule à partir d'elles.
+let articles = [];            // { id, nom, nomNorm, locs, codes }
+let courant = null;           // article sélectionné
+let ouvert = null;            // { type: "etagere"|"zone", id }
+let modeDemo = false;
+let optChemin = memo.lire("chemin", true);
+let optZoom = memo.lire("zoom", true);
+$("bChemin").setAttribute("aria-pressed", optChemin);
+$("bZoom").setAttribute("aria-pressed", optZoom);
+
+// Convertit une ligne brute de Grist en « article » utilisable par le widget.
+// mapColumnNames() applique les associations de colonnes faites dans Grist ; s'il n'y en a pas,
+// on essaie les noms par défaut du document. Renvoie null si la colonne Emplacement est introuvable.
+function versArticle(r) {
+  const m = (window.grist && grist.mapColumnNames && grist.mapColumnNames(r)) || {
+    Emplacement: r.Emplacement,
+    Nom: r.Libelle != null ? r.Libelle : r.Designation,
+  };
+  if (m.Emplacement === undefined) return null;
+  const nom = m.Nom != null && m.Nom !== "" ? String(m.Nom) : "Ligne " + r.id;
+  const locs = emplacements(m.Emplacement);
+  return { id: r.id, nom, nomNorm: norm(nom), locs, codes: codes(locs) };
+}
+
+// Qui est rangé où ?
+// Liste ce qui est rangé sur une étagère (groupé par niveau : "" = étagère entière, "1", "2"…)
+// ou dans une zone. Sert au panneau de droite.
+function contenu(type, id) {
+  const groupes = new Map();
+  for (const a of articles) {
+    if (type === "zone") {
+      if (a.locs.zones.includes(id)) (groupes.get("") || groupes.set("", []).get("")).push(a);
+    } else if (id in a.locs.etageres) {
+      const sous = a.locs.etageres[id].length ? a.locs.etageres[id] : [""];
+      for (const s of sous) (groupes.get(s) || groupes.set(s, []).get(s)).push(a);
+    }
   }
-  elNom.textContent = nom || "Plan du stock";
-  if (ids.length || tout.zones.length) {
-    const codes = ids.flatMap(id => locs[id].length ? locs[id].map(n => id + n) : [id]).concat(tout.zones);
-    elLoc.className = "ok";
-    elLoc.textContent = (codes.length > 1 ? "→ Emplacements " : "→ Emplacement ") + codes.join(", ");
-  } else if (nom) {
-    elLoc.className = "warn";
-    elLoc.textContent = "Emplacement non renseigné";
+  return groupes;
+}
+// Nombre d'articles sur une étagère / zone (badges et info-bulle).
+function nbArticles(type, id) {
+  return articles.filter(a => type === "zone" ? a.locs.zones.includes(id) : id in a.locs.etageres).length;
+}
+
+// ======================================================================
+//  Affichage
+// ======================================================================
+// Met tout l'écran en cohérence avec `courant` (article sélectionné) et `ouvert` (panneau) :
+// classes CSS du plan, pastilles de niveaux, puces de l'en-tête, itinéraire, puis zoom.
+// À appeler après chaque changement d'état.
+function afficher() {
+  const locs = courant ? courant.locs : { etageres: {}, zones: [] };
+  for (const z of Object.values(zones)) {
+    z.g.classList.toggle("on", locs.zones.includes(z.code));
+    z.g.classList.toggle("ouvert", ouvert?.type === "zone" && ouvert.id === z.code);
+  }
+  for (const id in etageres) {
+    const e = etageres[id], on = id in locs.etageres;
+    e.g.classList.toggle("on", on);
+    e.g.classList.toggle("ouvert", ouvert?.type === "etagere" && ouvert.id === id);
+    const actifs = on ? locs.etageres[id] : [];
+    for (const n in e.pastilles) e.pastilles[n].classList.toggle("actif", actifs.includes(n));
+  }
+  // En-tête
+  const elLoc = $("loc");
+  elLoc.replaceChildren();
+  $("nom").textContent = courant ? courant.nom : "Plan du stock";
+  if (courant && courant.codes.length) {
+    for (const c of courant.codes) {
+      const z = zones[norm(c)];
+      const b = h("button", { className: "puce" + (z ? " zone" : ""), textContent: c, title: "Voir ce qui est rangé ici" });
+      b.onclick = () => ouvrir(z ? "zone" : "etagere", z ? z.code : c[0]);
+      elLoc.append(b);
+    }
+  } else if (courant) {
+    elLoc.append(h("span", { className: "avert", textContent: "Emplacement non renseigné" }));
   } else {
-    elLoc.className = "";
-    elLoc.textContent = "Sélectionnez un matériel ou un consommable.";
+    elLoc.textContent = "Sélectionnez un article ou cliquez sur une étagère.";
+  }
+  tracerChemin();
+  if (optZoom) cadrer();
+}
+
+// Met à jour les badges « nombre d'articles » sur chaque étagère (après onRecords).
+function majComptes() {
+  for (const id in etageres) {
+    const n = nbArticles("etagere", id), e = etageres[id];
+    e.compte.classList.toggle("cache", !n);
+    e.ct.textContent = n > 99 ? "99+" : n;
   }
 }
 
-function demarrer() {
-  if (!window.grist) {
-    elLoc.className = "warn";
-    elLoc.textContent = "API Grist introuvable : ouvrez ce plan depuis un widget personnalisé Grist.";
-    return;
+// ---------- Panneau d'une étagère / d'une zone ----------
+// Ouvre le panneau de droite pour une étagère ("etagere", "B") ou une zone ("zone", "Allée 2")
+// et le remplit avec son contenu. Si le zoom auto est coupé, ramène quand même le lieu à l'écran.
+function ouvrir(type, id) {
+  ouvert = { type, id };
+  const groupes = contenu(type, id);
+  const total = nbArticles(type, id);
+  $("ptitre").textContent = type === "zone" ? id : "Étagère " + id;
+  $("psous").textContent = total ? total + (total > 1 ? " articles" : " article") : "Vide";
+  const liste = $("pliste");
+  liste.replaceChildren();
+  if (!total) liste.append(h("div", { className: "vide-panneau", textContent: "Rien n'est rangé ici pour l'instant." }));
+  const cles = [...groupes.keys()].sort((a, b) => (a === "" ? -1 : b === "" ? 1 : a - b));
+  for (const k of cles) {
+    if (type === "etagere") liste.append(h("div", { className: "groupe", textContent: k === "" ? "Étagère entière" : id + k }));
+    for (const a of groupes.get(k).sort((x, y) => x.nom.localeCompare(y.nom, "fr"))) {
+      const b = h("button", { className: "article" + (courant?.id === a.id ? " courant" : "") },
+        h("span", { className: "pt" }), h("span", { textContent: a.nom }));
+      b.onclick = () => choisir(a.id);
+      liste.append(b);
+    }
   }
+  $("panneau").hidden = false;
+  afficher();
+  if (!optZoom) { const b = type === "zone" ? zones[norm(id)].box : etageres[id].box;
+    if (b.x < vue.x || b.y < vue.y || b.x + b.w > vue.x + vue.w || b.y + b.h > vue.y + vue.h) allerA(boiteDe([b])); }
+}
+// Ferme le panneau.
+function fermer() { ouvert = null; $("panneau").hidden = true; afficher(); }
+$("pfermer").onclick = fermer;
+
+// Sélectionner un article : dans Grist on déplace le curseur de la table, puis Grist renvoie
+// onRecord, qui met à jour `courant`. En mode démo, on met à jour `courant` directement.
+function choisir(rowId) {
+  if (!modeDemo && window.grist?.setCursorPos) grist.setCursorPos({ rowId }).catch(() => {});
+  else { courant = articles.find(a => a.id === rowId) || null; if (ouvert) ouvrir(ouvert.type, ouvert.id); else afficher(); }
+}
+
+// ---------- Itinéraire ----------
+// Calcule les points de passage de l'itinéraire : porte → allée centrale (COULOIR_Y) → allée qui
+// dessert la cible → devant la cible. Le chemin reste ainsi dans les allées, sans traverser d'étagère.
+function pointsVers(cible) {
+  const pts = [PORTE];
+  if (cible.type === "zone") {
+    const b = zones[norm(cible.id)].box, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    pts.push([cx, COULOIR_Y]);
+    if (Math.abs(cy - COULOIR_Y) > 30) pts.push([cx, cy > COULOIR_Y ? b.y + 6 : cy]);
+    return pts;
+  }
+  const b = etageres[cible.id].box, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  if (b.y > 600)              { pts.push([cx, COULOIR_Y], [cx, b.y - 16]); }     // rangée du bas
+  else if (ACCES_LATERAL[cible.id]) { const ax = ACCES_LATERAL[cible.id]; pts.push([ax, COULOIR_Y], [ax, cy]); }
+  else                        { pts.push([cx, COULOIR_Y], [cx, b.y + b.h + 16]); } // M, N : par le bas
+  return pts;
+}
+// Transforme une suite de points en tracé SVG aux virages arrondis (courbes de Bézier quadratiques
+// de rayon r), pour un itinéraire plus « naturel » qu'une ligne brisée.
+function arrondi(pts, r = 34) {
+  pts = pts.filter((p, i) => !i || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 1);
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [p, c, n] = [pts[i - 1], pts[i], pts[i + 1]];
+    const l1 = Math.hypot(c[0] - p[0], c[1] - p[1]), l2 = Math.hypot(n[0] - c[0], n[1] - c[1]);
+    const k1 = Math.min(r, l1 / 2) / l1, k2 = Math.min(r, l2 / 2) / l2;
+    d += ` L${c[0] - (c[0] - p[0]) * k1},${c[1] - (c[1] - p[1]) * k1}`;
+    d += ` Q${c[0]},${c[1]} ${c[0] + (n[0] - c[0]) * k2},${c[1] + (n[1] - c[1]) * k2}`;
+  }
+  const z = pts[pts.length - 1];
+  return d + ` L${z[0]},${z[1]}`;
+}
+// L'itinéraire mène au premier emplacement de l'article (étagère par ordre alphabétique, sinon zone).
+function cibleCourante() {
+  if (!courant) return null;
+  const ids = Object.keys(courant.locs.etageres).sort();
+  if (ids.length) return { type: "etagere", id: ids[0] };
+  if (courant.locs.zones.length) return { type: "zone", id: courant.locs.zones[0] };
+  return null;
+}
+// Affiche ou cache l'itinéraire selon le bouton et la présence d'une cible.
+function tracerChemin() {
+  const cible = optChemin && cibleCourante();
+  chemin.classList.toggle("cache", !cible);
+  depart.classList.toggle("cache", !cible);
+  if (cible) chemin.setAttribute("d", arrondi(pointsVers(cible)));
+}
+
+// ---------- Caméra : zoom doux, molette, glisser ----------
+// La « caméra » est simplement le viewBox du SVG : zoomer = réduire largeur/hauteur,
+// se déplacer = changer x/y. `vue` mémorise le cadre actuel.
+let vue = { ...VUE_BASE }, anim = null;
+const legende = document.querySelector(".legende");
+// Applique un cadre au SVG immédiatement.
+function appliquer(v) {
+  vue = v; svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+  legende.style.opacity = v.w < VUE_BASE.w * 0.95 ? 0 : 1;   // la légende s'efface quand on zoome
+}
+// Anime la caméra vers un cadre en `duree` ms avec un ralenti en fin de course (ease-out cubique).
+// Animation désactivée si le système demande de réduire les animations.
+function allerA(cible, duree = 550) {
+  cancelAnimationFrame(anim);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) duree = 0;
+  const de = { ...vue }, t0 = performance.now();
+  const pas = t => {
+    const k = duree ? Math.min(1, (t - t0) / duree) : 1, e = 1 - Math.pow(1 - k, 3);
+    appliquer({ x: de.x + (cible.x - de.x) * e, y: de.y + (cible.y - de.y) * e, w: de.w + (cible.w - de.w) * e, h: de.h + (cible.h - de.h) * e });
+    if (k < 1) anim = requestAnimationFrame(pas);
+  };
+  anim = requestAnimationFrame(pas);
+}
+// Calcule le cadre qui englobe des rectangles, avec une marge, un zoom minimum (pour garder du
+// contexte autour), le même rapport largeur/hauteur que l'écran, et sans sortir du plan.
+function boiteDe(boites, marge = 140) {
+  if (!boites.length) return { ...VUE_BASE };
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (const b of boites) { x1 = Math.min(x1, b.x); y1 = Math.min(y1, b.y); x2 = Math.max(x2, b.x + b.w); y2 = Math.max(y2, b.y + b.h); }
+  const r = svg.getBoundingClientRect(), ratio = r.width / Math.max(1, r.height) || VUE_BASE.w / VUE_BASE.h;
+  let w = Math.max(x2 - x1 + marge * 2, 760), hh = Math.max(y2 - y1 + marge * 2, 440);
+  if (w / hh > ratio) hh = w / ratio; else w = hh * ratio;
+  if (w >= VUE_BASE.w && hh >= VUE_BASE.h) return { ...VUE_BASE };
+  // on garde le cadre à l'intérieur du plan pour ne pas montrer de vide autour du bâtiment
+  const borne = (c, t, b0, bt) => t >= bt ? b0 + (bt - t) / 2 : Math.min(Math.max(c, b0), b0 + bt - t);
+  return { x: borne((x1 + x2) / 2 - w / 2, w, VUE_BASE.x, VUE_BASE.w), y: borne((y1 + y2) / 2 - hh / 2, hh, VUE_BASE.y, VUE_BASE.h), w, h: hh };
+}
+// Zoome sur l'article courant (et sur l'étagère du panneau ouvert, pour voir les deux).
+function cadrer() {
+  const boites = [];
+  if (courant) {
+    for (const id in courant.locs.etageres) boites.push(etageres[id].box);
+    for (const c of courant.locs.zones) boites.push(zones[norm(c)].box);
+  }
+  if (ouvert) boites.push(ouvert.type === "zone" ? zones[norm(ouvert.id)].box : etageres[ouvert.id].box);
+  allerA(boiteDe(boites));
+}
+// Convertit la position de la souris (pixels écran) en coordonnées du plan.
+function versSvg(ev) {
+  const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+// Molette : zoom centré sur la souris (le point sous le curseur reste fixe).
+svg.addEventListener("wheel", ev => {
+  ev.preventDefault();
+  cancelAnimationFrame(anim);
+  const p = versSvg(ev), f = Math.pow(1.0015, ev.deltaY);
+  const w = Math.min(1700, Math.max(240, vue.w * f)), k = w / vue.w;
+  appliquer({ x: p.x - (p.x - vue.x) * k, y: p.y - (p.y - vue.y) * k, w, h: vue.h * k });
+}, { passive: false });
+// Glisser pour se déplacer. On n'entre en mode « glisser » qu'après 5 px de mouvement,
+// pour qu'un simple clic sur une étagère reste un clic.
+let glisse = null;
+svg.addEventListener("pointerdown", ev => { glisse = { x: ev.clientX, y: ev.clientY, v: { ...vue }, bouge: false }; });
+svg.addEventListener("pointermove", ev => {
+  if (!glisse) return;
+  const dx = ev.clientX - glisse.x, dy = ev.clientY - glisse.y;
+  if (!glisse.bouge && Math.hypot(dx, dy) < 5) return;
+  if (!glisse.bouge) { glisse.bouge = true; svg.setPointerCapture(ev.pointerId); svg.classList.add("glisse"); cancelAnimationFrame(anim); }
+  const s = vue.w / svg.getBoundingClientRect().width;
+  appliquer({ ...glisse.v, x: glisse.v.x - dx * s, y: glisse.v.y - dy * s, w: vue.w, h: vue.h });
+});
+const finGlisse = () => { setTimeout(() => { glisse = null; }, 0); svg.classList.remove("glisse"); };
+svg.addEventListener("pointerup", finGlisse);
+svg.addEventListener("pointercancel", finGlisse);
+// Double-clic : retour à la vue d'ensemble.
+svg.addEventListener("dblclick", () => allerA({ ...VUE_BASE }));
+$("bVue").onclick = () => allerA({ ...VUE_BASE });
+
+// ---------- Clics et survol sur le plan ----------
+// Retrouve l'étagère ou la zone sous le pointeur à partir de l'élément cliqué.
+function quoi(ev) {
+  const s = ev.target.closest?.(".shelf"), z = ev.target.closest?.(".zone");
+  if (s) return { type: "etagere", id: s.dataset.etagere };
+  if (z) return { type: "zone", id: z.dataset.zone };
+  return null;
+}
+// Clic sur une étagère/zone : ouvre son panneau (un 2e clic le referme). Ignoré après un glisser.
+svg.addEventListener("click", ev => {
+  if (glisse?.bouge) return;
+  const c = quoi(ev);
+  if (!c) return;
+  if (ouvert && ouvert.type === c.type && ouvert.id === c.id) fermer(); else ouvrir(c.type, c.id);
+});
+svg.addEventListener("keydown", ev => {
+  if (ev.key !== "Enter" && ev.key !== " ") return;
+  const c = quoi(ev); if (c) { ev.preventDefault(); ouvrir(c.type, c.id); }
+});
+// Info-bulle au survol (souris uniquement) : « Étagère B · 3 articles ».
+const bulle = $("bulle");
+svg.addEventListener("pointermove", ev => {
+  const c = !glisse?.bouge && ev.pointerType === "mouse" && quoi(ev);
+  if (!c) { bulle.classList.remove("visible"); return; }
+  const n = nbArticles(c.type, c.id);
+  bulle.textContent = (c.type === "zone" ? c.id : "Étagère " + c.id) + " · " + (n ? n + (n > 1 ? " articles" : " article") : "vide");
+  const r = svg.getBoundingClientRect();
+  bulle.style.left = Math.min(r.width - 160, ev.clientX - r.left + 14) + "px";
+  bulle.style.top = (ev.clientY - r.top + 16) + "px";
+  bulle.classList.add("visible");
+});
+svg.addEventListener("pointerleave", () => bulle.classList.remove("visible"));
+
+// ---------- Boutons d'options ----------
+$("bChemin").onclick = () => { optChemin = !optChemin; memo.ecrire("chemin", optChemin); $("bChemin").setAttribute("aria-pressed", optChemin); tracerChemin(); };
+$("bZoom").onclick = () => { optZoom = !optZoom; memo.ecrire("zoom", optZoom); $("bZoom").setAttribute("aria-pressed", optZoom); optZoom ? cadrer() : allerA({ ...VUE_BASE }); };
+
+// ---------- Recherche ----------
+// Recherche : `choix` = résultats affichés, `actif` = celui surligné au clavier.
+const q = $("q"), res = $("resultats");
+let choix = [], actif = 0;
+// Construit la liste de résultats : d'abord un éventuel emplacement (« B2 », « allée 2 »),
+// puis les articles dont le nom contient le texte ou dont un code correspond exactement.
+// Les noms qui COMMENCENT par le texte passent en premier.
+function chercher() {
+  const t = norm(q.value);
+  res.replaceChildren(); choix = []; actif = 0;
+  if (!t) { res.classList.remove("ouvert"); return; }
+  // un code d'emplacement ? (« B », « b2 », « allée 2 »)
+  const z = zones[t] || Object.values(zones).find(z => norm(z.libelle) === t);
+  const m = /^([a-z])-?([0-9]+)?$/.exec(t);
+  if (z) choix.push({ lieu: { type: "zone", id: z.code }, label: "Voir la zone " + z.code, code: "" });
+  else if (m && etageres[m[1].toUpperCase()]) choix.push({ lieu: { type: "etagere", id: m[1].toUpperCase() }, label: "Voir l'étagère " + m[1].toUpperCase(), code: "" });
+  const trouves = articles
+    .filter(a => a.nomNorm.includes(t) || a.codes.some(c => norm(c) === t))
+    .sort((a, b) => (a.nomNorm.startsWith(t) ? 0 : 1) - (b.nomNorm.startsWith(t) ? 0 : 1) || a.nom.localeCompare(b.nom, "fr"))
+    .slice(0, 30);
+  for (const a of trouves) choix.push({ article: a, label: a.nom, code: a.codes.join(", ") || "—" });
+  if (!choix.length) res.append(h("li", { className: "vide", textContent: "Aucun résultat" }));
+  choix.forEach((c, i) => {
+    const li = h("li", { role: "option" }, h("span", { className: "n", textContent: c.label }), h("span", { className: "c", textContent: c.code }));
+    li.onmousedown = e => { e.preventDefault(); valider(i); };
+    res.append(li);
+  });
+  surligner();
+  res.classList.add("ouvert");
+}
+// Surligne le résultat actif et le garde visible dans la liste.
+function surligner() { [...res.children].forEach((li, i) => li.classList.toggle("actif", i === actif && !!choix.length)); res.children[actif]?.scrollIntoView({ block: "nearest" }); }
+// Applique le résultat choisi : sélectionne l'article (et ferme le panneau) ou ouvre l'emplacement.
+function valider(i) {
+  const c = choix[i]; if (!c) return;
+  if (c.article) { if (ouvert) { ouvert = null; $("panneau").hidden = true; } choisir(c.article.id); }
+  else ouvrir(c.lieu.type, c.lieu.id);
+  q.value = ""; res.classList.remove("ouvert"); q.blur();
+}
+q.addEventListener("input", chercher);
+q.addEventListener("focus", () => q.value && chercher());
+q.addEventListener("blur", () => setTimeout(() => res.classList.remove("ouvert"), 100));
+q.addEventListener("keydown", ev => {
+  if (ev.key === "ArrowDown") { actif = Math.min(choix.length - 1, actif + 1); surligner(); ev.preventDefault(); }
+  else if (ev.key === "ArrowUp") { actif = Math.max(0, actif - 1); surligner(); ev.preventDefault(); }
+  else if (ev.key === "Enter") { valider(actif); ev.preventDefault(); }
+  else if (ev.key === "Escape") { q.value = ""; res.classList.remove("ouvert"); q.blur(); }
+});
+// Raccourcis globaux : « / » pour chercher, Échap pour fermer le panneau.
+document.addEventListener("keydown", ev => {
+  if (ev.key === "/" && document.activeElement !== q) { ev.preventDefault(); q.focus(); }
+  else if (ev.key === "Escape" && document.activeElement !== q && ouvert) fermer();
+});
+// Si la taille du widget change (panneau ouvert, fenêtre redimensionnée), on recadre.
+new ResizeObserver(() => { if (optZoom && (courant || ouvert)) cadrer(); }).observe(svg);
+
+// ======================================================================
+//  Connexion à Grist (ou mode démo hors de Grist)
+// ======================================================================
+// Reçoit toute la table depuis Grist (à chaque modification des données).
+function recevoirArticles(records) {
+  articles = (records || []).map(versArticle).filter(Boolean);
+  if (courant) courant = articles.find(a => a.id === courant.id) || courant;
+  majComptes();
+  if (ouvert) ouvrir(ouvert.type, ouvert.id);
+}
+// Point d'entrée. requiredAccess « read table » : le widget lit la table mais ne peut rien modifier.
+// `columns` déclare les colonnes à associer dans le panneau de configuration de Grist.
+function demarrer() {
+  if (window.parent === window || !window.grist) { demo(); return; }
   grist.ready({
     requiredAccess: "read table",
     columns: [
@@ -216,21 +810,36 @@ function demarrer() {
       { name: "Nom", title: "Nom affiché", type: "Any", optional: true },
     ],
   });
+  grist.onRecords(recevoirArticles);
   grist.onRecord(record => {
-    if (!record) { afficher("", null); return; }
-    // Colonnes associées dans le panneau du widget, sinon noms par défaut du document
-    const m = grist.mapColumnNames(record) || {
-      Emplacement: record.Emplacement,
-      Nom: record.Libelle != null ? record.Libelle : record.Designation,
-    };
-    if (m.Emplacement === undefined) {
-      elLoc.className = "warn";
-      elLoc.textContent = "Choisissez la colonne « Emplacement » dans les options du widget.";
+    if (!record) { courant = null; afficher(); return; }
+    const a = versArticle(record);
+    if (!a) {
+      $("nom").textContent = "Plan du stock";
+      $("loc").replaceChildren(h("span", { className: "avert", textContent: "Choisissez la colonne « Emplacement » dans les options du widget." }));
       return;
     }
-    afficher(m.Nom != null ? String(m.Nom) : "Ligne " + record.id, m.Emplacement);
+    courant = a;
+    if (ouvert) ouvrir(ouvert.type, ouvert.id); else afficher();
   });
-  grist.onRecords(() => {}); // garde le widget à jour quand les données changent
+}
+// Mode démo : utilisé quand la page est ouverte directement (hors iframe Grist),
+// avec des données fictives pour tester l'interface.
+function demo() {
+  modeDemo = true;
+  $("demo").hidden = false;
+  const lignes = [
+    ["Écrans Dell 24\"", "A2"], ["Câbles HDMI", "B1"], ["Câbles RJ45", "B2, B3"], ["Claviers USB", "C3"],
+    ["Souris sans fil", "C1 C2"], ["Toners HP 26A", "D"], ["Unités centrales", "H2"], ["PC portables reconditionnés", "J1, J2"],
+    ["Rallonges électriques", "K"], ["Piles AA", "L3"], ["Stations d'accueil USB-C", "M2"], ["Étiqueteuse", "Q2"],
+    ["Smartphones Galaxy A55", "R1"], ["Tablettes Galaxy Tab", "R2"], ["Chargeurs USB-C", "S3"], ["Coques de protection", "T1"],
+    ["Casques audio", "U2"], ["Webcams", "V1"], ["Barrettes RAM", "X2"], ["Disques SSD", "X3"],
+    ["Ramettes A4", "Allée centrale"], ["Imprimante multifonction", "Allée 2"], ["Écrans 27\" en carton", "Allée 4"],
+    ["Cartons de déménagement", "Allée 1"], ["Onduleur", "Entre F et G"], ["Chariot", "Entrée"], ["Vidéoprojecteur", ""],
+  ];
+  recevoirArticles(lignes.map(([Libelle, Emplacement], i) => ({ id: i + 1, Libelle, Emplacement })));
+  courant = articles.find(a => a.nom.startsWith("Tablettes"));
+  afficher();
 }
 
 // Charge l'API Grist (aucun accès au réseau local depuis cette page)
