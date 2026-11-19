@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formulaires du stock</title>
+<style>
+  :root {
+    --bg: #f4f2ec; --surface: #fffdf8; --text: #26231e; --muted: #7a7468; --line: #e3ddd1;
+    --accent: #1f8a5b; --accent-soft: #d9f1e4; --out: #b85a1c; --out-soft: #fbe6d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1d1c1a; --surface: #272522; --text: #f0ece4; --muted: #a59e91; --line: #3a3732;
+      --accent: #4cc48b; --accent-soft: #1f3a2d; --out: #f0a06a; --out-soft: #3d2a1d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; justify-content: center; }
+  main { width: 100%; max-width: 760px; padding: 32px 18px 40px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
+  .sous { color: var(--muted); margin: 0 0 26px; }
+  .groupe { margin-bottom: 22px; }
+  .groupe h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+  .grille { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .grille { grid-template-columns: 1fr; } }
+  a.carte, span.carte { display: flex; gap: 14px; align-items: center; padding: 18px; border-radius: 16px;
+    background: var(--surface); border: 1px solid var(--line); color: inherit; text-decoration: none;
+    transition: transform .12s, box-shadow .12s, border-color .12s; }
+  a.carte:hover, a.carte:focus-visible { transform: translateY(-2px); border-color: var(--accent);
+    box-shadow: 0 6px 18px rgba(0,0,0,.08); outline: none; }
+  .ico { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; }
+  .entree .ico { background: var(--accent-soft); }
+  .sortie .ico { background: var(--out-soft); }
+  .titre { font-weight: 650; font-size: 16px; }
+  .detail { color: var(--muted); font-size: 13px; }
+  span.carte { opacity: .55; cursor: not-allowed; }
+  .pied { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  .redir { text-align: center; margin-top: 30vh; color: var(--muted); }
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Formulaires du stock</h1>
+  <p class="sous">La date du formulaire est remplie avec la date et l'heure du clic. Elle reste modifiable.</p>
+  <div id="groupes"></div>
+  <p class="pied">Astuce : ajoutez cette page à vos favoris. Un lien direct vers un formulaire est aussi possible :
+    <code>formulaires.html?f=sortie-materiel</code>.</p>
+</main>
+<script>
+// ======================================================================
+//  Configuration : serveur Grist et formulaires publiés
+//  cle = clé du lien public (Partager > lien du formulaire publié), section = n° du widget formulaire
+//  Laisser cle à null tant que le formulaire n'est pas publié.
+// ======================================================================
+const GRIST = "http://192.168.100.10:8484";
+const FORMULAIRES = [
+  { id: "entree-materiel",  groupe: "Matériel",     sens: "entree", icone: "📥", titre: "Entrée de matériel",
+    detail: "Une unité qui arrive dans le stock", cle: "56HorHg7rKHYX7ePZ518RC", section: 19, champ: "Date_entree", type: "date" },
+  { id: "sortie-materiel",  groupe: "Matériel",     sens: "sortie", icone: "📤", titre: "Sortie / retour de matériel",
+    detail: "Une unité qui quitte le stock ou qui revient", cle: "56HorHg7rKHYX7ePZ518RC", section: 49, champ: "Date", type: "datetime" },
+  { id: "reception-conso",  groupe: "Consommables", sens: "entree", icone: "📥", titre: "Réception de consommables",
+    detail: "Livraison d'un article déjà référencé", cle: null, section: 21, champ: "Date", type: "datetime" },
+  { id: "sortie-conso",     groupe: "Consommables", sens: "sortie", icone: "📤", titre: "Sortie de consommables",
+    detail: "Consommables remis à quelqu'un", cle: null, section: 50, champ: "Date", type: "datetime" },
+];
+
+const deux = n => String(n).padStart(2, "0");
+function maintenant(type) {
+  const d = new Date();
+  const jour = d.getFullYear() + "-" + deux(d.getMonth() + 1) + "-" + deux(d.getDate());
+  return type === "date" ? jour : jour + " " + deux(d.getHours()) + ":" + deux(d.getMinutes()) + ":" + deux(d.getSeconds());
+}
+function lien(f) {
+  const p = new URLSearchParams();
+  p.set(f.champ, maintenant(f.type));
+  return GRIST + "/forms/" + f.cle + "/" + f.section + "?" + p.toString();
+}
+
+// Lien direct : formulaires.html?f=sortie-materiel → redirection immédiate
+const demande = new URLSearchParams(location.search).get("f");
+const cible = FORMULAIRES.find(f => f.id === demande && f.cle);
+if (cible) {
+  document.getElementById("app").innerHTML = '<p class="redir">Ouverture du formulaire « ' + cible.titre + ' »…</p>';
+  location.replace(lien(cible));
+} else {
+  const zone = document.getElementById("groupes");
+  for (const nom of [...new Set(FORMULAIRES.map(f => f.groupe))]) {
+    const g = document.createElement("section"); g.className = "groupe";
+    g.innerHTML = "<h2>" + nom + "</h2>";
+    const grille = document.createElement("div"); grille.className = "grille";
+    for (const f of FORMULAIRES.filter(x => x.groupe === nom)) {
+      const el = document.createElement(f.cle ? "a" : "span");
+      el.className = "carte " + f.sens;
+      el.innerHTML = '<div class="ico">' + f.icone + '</div><div><div class="titre">' + f.titre + '</div><div class="detail">' +
+        (f.cle ? f.detail : "Formulaire pas encore publié") + "</div></div>";
+      if (f.cle) {
+        el.href = GRIST + "/forms/" + f.cle + "/" + f.section;
+        // la date est calculée au moment du clic, pas au chargement de la page
+        el.addEventListener("click", e => { e.preventDefault(); location.href = lien(f); });
+      }
+      grille.append(el);
+    }
+    g.append(grille); zone.append(g);
+  }
+}
+</script>
+</body>
+</html>
